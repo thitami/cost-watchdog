@@ -1,0 +1,31 @@
+[project]
+name = "cost-watchdog"
+version = "0.1.0"
+description = "Read-only MCP server that explains AWS and Kubernetes spend and finds waste"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2,<3",
+    "boto3>=1.34",
+    "kubernetes>=29",
+    "pydantic>=2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+# Live evals against Claude models (python -m evals run --models ...)
+eval = ["anthropic>=2,<3"]
+
+[project.scripts]
+cost-watchdog = "cost_watchdog.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cost_watchdog"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]

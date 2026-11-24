@@ -1,0 +1,82 @@
+# Runs cost-watchdog in-cluster over streamable HTTP, with read-only RBAC.
+# AWS access via IRSA (EKS): annotate the ServiceAccount with a role that has deploy/iam-policy.json.
+# The Service is ClusterIP only: put your own auth (OAuth proxy / gateway) in front before exposing it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cost-watchdog
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cost-watchdog
+  namespace: cost-watchdog
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/cost-watchdog-readonly  # change me
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cost-watchdog-read
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cost-watchdog-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cost-watchdog-read
+subjects:
+  - kind: ServiceAccount
+    name: cost-watchdog
+    namespace: cost-watchdog
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cost-watchdog
+  namespace: cost-watchdog
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: cost-watchdog}
+  template:
+    metadata:
+      labels: {app: cost-watchdog}
+    spec:
+      serviceAccountName: cost-watchdog
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: server
+          image: ghcr.io/YOUR_USER/cost-watchdog:0.1.0  # change me
+          args: ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8000"]
+          env:
+            - {name: COST_WATCHDOG_REGIONS, value: "eu-west-1,eu-central-1"}
+            - {name: COST_WATCHDOG_K8S_MODE, value: "incluster"}
+          ports: [{containerPort: 8000}]
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cost-watchdog
+  namespace: cost-watchdog
+spec:
+  selector: {app: cost-watchdog}
+  ports: [{port: 80, targetPort: 8000}]
