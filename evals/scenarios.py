@@ -260,7 +260,9 @@ SCENARIOS: list[Scenario] = [
         question="Our S3 costs have been creeping up week after week. What changed?",
         root_cause=("Objects stopped transitioning to Glacier (lifecycle transition requests "
                     "dropped to zero ~24 days ago), so S3 Standard storage keeps growing."),
-        must_mention=(r"lifecycle|transition|glacier",
+        # The diagnosis, not a mention: "Glacier costs are flat" must not pass.
+        must_mention=(r"transition\w*|lifecycle[^.\n]{0,60}\b(remov|delet|disabl|stop|missing|no longer|broke|chang|gone)"
+                      r"|glacier[^.\n]{0,60}\b(stop|drop|zero|ceas|no longer|fell|halt)",
                       r"standard|storage|timedstorage"),
         evidence=("TimedStorage-ByteHrs", "Requests-GLACIER-Tier1"), plant=_s3_lifecycle,
         difficulty="hard",

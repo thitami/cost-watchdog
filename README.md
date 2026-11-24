@@ -104,13 +104,13 @@ python -m evals report evals/results/latest.json          # re-render a saved ru
 `baseline` is the `weekly_cost_review` recipe with no reasoning: it calls four tools and pastes the spike summary. Any model should beat it. `claude-code:<model>` runs `claude -p` with its built-in tools off and only this MCP server attached. It uses your Claude subscription, not an API key, and the cost it reports is the API-equivalent price. `--judge` adds an LLM grader with the same rubric, as a check on the regexes. `--effort` sets Claude's effort level. Other providers can be added by implementing the `Agent` protocol in `evals/agents.py`. The tests check that the benchmark itself is sound: every ground-truth cause shows up in some tool output, every trap is visible to the agent, the healthy baseline moves under 2% week over week, and every ground-truth answer passes its own grader.
 
 <!-- eval-results:start -->
-_date: 2026-11-24; scenarios: 20; repeats: 1_
+_date: 2026-11-24; scenarios: 20; repeats: 3_
 
 | Agent | Root cause found | Tool calls / run | Cost Explorer calls / run | CE cost / run | Runs with unsafe recs | LLM cost / run | Errors |
 |---|---|---|---|---|---|---|---|
-| `claude-code:sonnet` | 19/20 (95%) | 2.0 | 8.6 | $0.09 | 0 | $0.020 | 0 |
-| `claude-code:opus` | 19/20 (95%) | 1.9 | 8.8 | $0.09 | 0 | $0.051 | 0 |
-| `baseline` | 9/20 (45%) | 4.0 | 11.0 | $0.11 | 0 | $0.000 | 0 |
+| `claude-code:sonnet` | 57/60 (95%) | 1.9 | 8.3 | $0.08 | 0 | $0.020 | 0 |
+| `claude-code:opus` | 57/60 (95%) | 1.8 | 8.5 | $0.08 | 0 | $0.047 | 0 |
+| `baseline` | 27/60 (45%) | 4.0 | 11.0 | $0.11 | 0 | $0.000 | 0 |
 
 _`claude-code:` agents run headless Claude Code on a Claude subscription; their LLM cost is the API-equivalent price Claude Code reports, not a charge._
 
@@ -120,26 +120,26 @@ _`claude-code:` agents run headless Claude Code on a Claude subscription; their 
 
 | Scenario | Difficulty | `baseline` | `claude-code:sonnet` | `claude-code:opus` |
 |---|---|---|---|---|
-| S3 traffic routed through a NAT gateway | easy | ✅ · 11 CE | ✅ · 11 CE | ✅ · 11 CE |
-| Forgotten p4d GPU instance in staging | easy | ✅ · 11 CE | ✅ · 11 CE | ✅ · 12 CE |
-| Debug logging left on in production | easy | ✅ · 11 CE | ✅ · 11 CE | ✅ · 11 CE |
-| Cluster autoscaler chasing an over-requesting deployment | hard | ❌ · 11 CE | ✅ · 12 CE | ✅ · 8 CE |
-| S3 lifecycle rules removed | hard | ❌ · 11 CE | ❌ · 9 CE | ❌ · 17 CE |
-| Cross-AZ traffic after a topology change | medium | ✅ · 11 CE | ✅ · 11 CE | ✅ · 11 CE |
-| Agent loop re-sending context to Bedrock | easy | ✅ · 11 CE | ✅ · 11 CE | ✅ · 8 CE |
-| io2 volumes orphaned by a migration | medium | ❌ · 11 CE | ✅ · 0 CE | ✅ · 0 CE |
-| Nightly backup snapshots without retention | medium | ❌ · 11 CE | ✅ · 1 CE | ✅ · 1 CE |
-| PR preview environments not torn down | medium | ❌ · 11 CE | ✅ · 0 CE | ✅ · 0 CE |
-| Public IPv4 on every node | medium | ✅ · 11 CE | ✅ · 11 CE | ✅ · 11 CE |
-| Production database resized 4x | easy | ✅ · 11 CE | ✅ · 11 CE | ✅ · 13 CE |
-| Lambda writing back to its own trigger bucket | medium | ❌ · 11 CE | ✅ · 8 CE | ✅ · 8 CE |
-| Compute Savings Plan expired | hard | ❌ · 11 CE | ✅ · 11 CE | ✅ · 8 CE |
-| Load-test EKS clusters left running | hard | ❌ · 11 CE | ✅ · 13 CE | ✅ · 12 CE |
-| Over-requested ML deployment | easy | ❌ · 11 CE | ✅ · 0 CE | ✅ · 0 CE |
-| Extra CloudTrail trail with data events | medium | ✅ · 11 CE | ✅ · 11 CE | ✅ · 11 CE |
-| Unthrottled DynamoDB backfill on on-demand | easy | ✅ · 11 CE | ✅ · 8 CE | ✅ · 16 CE |
-| Two incidents at once: a g5 instance and debug logs | hard | ❌ · 11 CE | ✅ · 11 CE | ✅ · 11 CE |
-| Control: broad organic growth, no incident | hard | ❌ · 11 CE | ✅ · 11 CE | ✅ · 8 CE |
+| S3 traffic routed through a NAT gateway | easy | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 10 CE |
+| Forgotten p4d GPU instance in staging | easy | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 12 CE |
+| Debug logging left on in production | easy | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE |
+| Cluster autoscaler chasing an over-requesting deployment | hard | ❌ 0/3 · 11 CE | ✅ 3/3 · 10 CE | ✅ 3/3 · 8 CE |
+| S3 lifecycle rules removed | hard | ❌ 0/3 · 11 CE | ❌ 0/3 · 9 CE | ❌ 0/3 · 14 CE |
+| Cross-AZ traffic after a topology change | medium | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 14 CE |
+| Agent loop re-sending context to Bedrock | easy | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 9 CE |
+| io2 volumes orphaned by a migration | medium | ❌ 0/3 · 11 CE | ✅ 3/3 · 0 CE | ✅ 3/3 · 0 CE |
+| Nightly backup snapshots without retention | medium | ❌ 0/3 · 11 CE | ✅ 3/3 · 1 CE | ✅ 3/3 · 1 CE |
+| PR preview environments not torn down | medium | ❌ 0/3 · 11 CE | ✅ 3/3 · 0 CE | ✅ 3/3 · 0 CE |
+| Public IPv4 on every node | medium | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 10 CE |
+| Production database resized 4x | easy | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE |
+| Lambda writing back to its own trigger bucket | medium | ❌ 0/3 · 11 CE | ✅ 3/3 · 8 CE | ✅ 3/3 · 8 CE |
+| Compute Savings Plan expired | hard | ❌ 0/3 · 11 CE | ✅ 3/3 · 9 CE | ✅ 3/3 · 8 CE |
+| Load-test EKS clusters left running | hard | ❌ 0/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 12 CE |
+| Over-requested ML deployment | easy | ❌ 0/3 · 11 CE | ✅ 3/3 · 0 CE | ✅ 3/3 · 0 CE |
+| Extra CloudTrail trail with data events | medium | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE |
+| Unthrottled DynamoDB backfill on on-demand | easy | ✅ 3/3 · 11 CE | ✅ 3/3 · 8 CE | ✅ 3/3 · 11 CE |
+| Two incidents at once: a g5 instance and debug logs | hard | ❌ 0/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 11 CE |
+| Control: broad organic growth, no incident | hard | ❌ 0/3 · 11 CE | ✅ 3/3 · 11 CE | ✅ 3/3 · 10 CE |
 
 </details>
 <!-- eval-results:end -->

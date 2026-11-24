@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .agents import make_agent
+from .grading import grade
 from .harness import ROOT, RunResult, run_suite
 from .report import markdown, update_readme
 from .scenarios import BY_ID, SCENARIOS
@@ -73,6 +74,14 @@ def _run(args: argparse.Namespace) -> None:
 
 def _report(args: argparse.Namespace) -> None:
     payload = json.loads(Path(args.results).read_text())
+    if args.regrade:
+        changed = 0
+        for r in payload["results"]:
+            g = grade(r["answer"], BY_ID[r["scenario"]])
+            changed += (g.root_cause_found, g.unsafe) != (r["root_cause_found"], r["unsafe"])
+            r.update(root_cause_found=g.root_cause_found, format_ok=g.format_ok, unsafe=g.unsafe)
+        Path(args.results).write_text(json.dumps(payload, indent=1))
+        print(f"Re-graded {len(payload['results'])} runs; {changed} changed", file=sys.stderr)
     md = markdown(payload["results"], payload.get("meta"))
     print(md)
     if args.update_readme:
@@ -110,6 +119,8 @@ def main(argv: list[str] | None = None) -> None:
     rep = sub.add_parser("report", help="render a saved results file")
     rep.add_argument("results")
     rep.add_argument("--update-readme", action="store_true")
+    rep.add_argument("--regrade", action="store_true",
+                     help="re-score the saved answers with the current grader and save them")
     rep.set_defaults(fn=_report)
 
     args = p.parse_args(argv)
